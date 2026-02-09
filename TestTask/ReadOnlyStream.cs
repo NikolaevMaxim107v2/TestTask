@@ -13,7 +13,7 @@ public class ReadOnlyStream : IReadOnlyStream
     {
         _fileStream = new FileStream(fileFullPath, FileMode.Open, FileAccess.Read);
         _reader = new StreamReader(_fileStream, Encoding.UTF8);
-        IsEof = false;
+        IsEof = _reader.EndOfStream;
     }
 
     public char ReadNextChar()
@@ -28,6 +28,7 @@ public class ReadOnlyStream : IReadOnlyStream
             throw new EndOfStreamException();
         }
 
+        IsEof = _reader.EndOfStream;
         return (char)value;
     }
 
@@ -35,7 +36,7 @@ public class ReadOnlyStream : IReadOnlyStream
     {
         _fileStream.Seek(0, SeekOrigin.Begin);
         _reader.DiscardBufferedData();
-        IsEof = false;
+        IsEof = _reader.EndOfStream;
     }
 
     public void Dispose()

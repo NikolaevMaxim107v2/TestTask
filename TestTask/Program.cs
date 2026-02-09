@@ -7,6 +7,10 @@ namespace TestTask
 {
     public class Program
     {
+        // Список гласных
+        private static readonly HashSet<char> Vowels = new HashSet<char>(
+            "аеёиоуыэюяAEIOUYаеёиоуыэюя".ToUpperInvariant()
+        );
 
         /// <summary>
         /// Программа принимает на входе 2 пути до файлов.
@@ -18,19 +22,27 @@ namespace TestTask
         /// Второй параметр - путь до второго файла.</param>
         static void Main(string[] args)
         {
-            IReadOnlyStream inputStream1 = GetInputStream(args[0]);
-            IReadOnlyStream inputStream2 = GetInputStream(args[1]);
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Укажите два пути до файлов.");
+                return;
+            }
 
-            IList<LetterStats> singleLetterStats = FillSingleLetterStats(inputStream1);
-            IList<LetterStats> doubleLetterStats = FillDoubleLetterStats(inputStream2);
+            using (IReadOnlyStream inputStream1 = GetInputStream(args[0]))
+            using (IReadOnlyStream inputStream2 = GetInputStream(args[1]))
+            {
+                IList<LetterStats> singleLetterStats = FillSingleLetterStats(inputStream1);
+                IList<LetterStats> doubleLetterStats = FillDoubleLetterStats(inputStream2);
 
-            RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
-            RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
+                RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
+                RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
 
-            PrintStatistic(singleLetterStats);
-            PrintStatistic(doubleLetterStats);
+                PrintStatistic(singleLetterStats);
+                PrintStatistic(doubleLetterStats);
+            }
 
-            Console.ReadKey();
+            Console.WriteLine("Нажмите любую клавишу для выхода...");
+            Console.ReadKey(true);
         }
 
 
@@ -57,18 +69,16 @@ namespace TestTask
 
             while (!stream.IsEof)
             {
-                try
-                {
-                    char c = stream.ReadNextChar();
-                    if (!char.IsLetter(c)) continue;
+                char c;
+                try { c = stream.ReadNextChar(); }
+                catch (EndOfStreamException) { break; }
 
-                    string key = c.ToString();
-                    if (!dict.ContainsKey(key))
-                        dict[key] = new LetterStats { Letter = key };
+                if (!char.IsLetter(c)) continue;
 
-                    dict[key].Count++;
-                }
-                catch (EndOfStreamException) { }
+                string key = c.ToString();
+                if (!dict.ContainsKey(key))
+                    dict[key] = new LetterStats { Letter = key };
+                IncStatistic(dict[key]);
             }
 
             return dict.Values.ToList();
@@ -91,27 +101,27 @@ namespace TestTask
 
             while (!stream.IsEof)
             {
-                try
+                char current;
+                try { current = stream.ReadNextChar(); }
+                catch (EndOfStreamException) { break; }
+
+                if (!char.IsLetter(current))
                 {
-                    char current = char.ToLower(stream.ReadNextChar());
-                    if (!char.IsLetter(current))
-                    {
-                        prev = null;
-                        continue;
-                    }
-
-                    if (prev == current)
-                    {
-                        string pair = $"{current}{current}";
-                        if (!dict.ContainsKey(pair))
-                            dict[pair] = new LetterStats { Letter = pair };
-
-                        IncStatistic(dict[pair]);
-                    }
-
-                    prev = current;
+                    prev = null;
+                    continue;
                 }
-                catch (EndOfStreamException) { }
+
+                char normalized = char.ToUpperInvariant(current);
+
+                if (prev.HasValue && char.ToUpperInvariant(prev.Value) == normalized)
+                {
+                    string pair = $"{normalized}{normalized}";
+                    if (!dict.ContainsKey(pair))
+                        dict[pair] = new LetterStats { Letter = pair };
+                    IncStatistic(dict[pair]);
+                }
+
+                prev = current;
             }
 
             return dict.Values.ToList();
@@ -125,19 +135,19 @@ namespace TestTask
         /// </summary>
         /// <param name="letters">Коллекция со статистиками вхождения букв/пар</param>
         /// <param name="charType">Тип букв для анализа</param>
-        
-        private static readonly HashSet<char> Vowels = new HashSet<char>("аеёиоуыэюяaeiou");
 
         private static void RemoveCharStatsByType(IList<LetterStats> letters, CharType charType)
         {
             for (int i = letters.Count - 1; i >= 0; i--)
             {
-                bool isVowelOnly = letters[i].Letter
-                    .ToLower()
-                    .All(c => Vowels.Contains(c));
+                string val = letters[i].Letter;
+                if (!val.All(char.IsLetter)) continue;
+
+                bool isVowelOnly = val.All(c => Vowels.Contains(char.ToUpperInvariant(c)));
+                bool isConsonantOnly = val.All(c => char.IsLetter(c) && !Vowels.Contains(char.ToUpperInvariant(c)));
 
                 if ((charType == CharType.Vowel && isVowelOnly) ||
-                    (charType == CharType.Consonants && !isVowelOnly))
+                    (charType == CharType.Consonants && isConsonantOnly))
                 {
                     letters.RemoveAt(i);
                 }
@@ -156,7 +166,7 @@ namespace TestTask
         {
             int total = 0;
 
-            foreach (var stat in letters.OrderBy(l => l.Letter))
+            foreach (var stat in letters.OrderBy(l => l.Letter, StringComparer.Ordinal))
             {
                 Console.WriteLine($"{stat.Letter} : {stat.Count}");
                 total += stat.Count;
