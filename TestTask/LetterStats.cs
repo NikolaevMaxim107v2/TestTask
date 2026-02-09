@@ -1,18 +1,11 @@
 ﻿namespace TestTask
 {
-    /// <summary>
-    /// Статистика вхождения буквы/пары букв
-    /// </summary>
-    public struct LetterStats
+    // Статистика вхождения буквы/пары букв
+    public class LetterStats
     {
-        /// <summary>
-        /// Буква/Пара букв для учёта статистики.
-        /// </summary>
-        public string Letter;
 
-        /// <summary>
-        /// Кол-во вхождений буквы/пары.
-        /// </summary>
-        public int Count;
+        public string Letter; // Буква/Пара букв для учёта статистики.
+
+        public int Count; // Кол-во вхождений буквы/пары
     }
 }
