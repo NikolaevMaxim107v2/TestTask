@@ -22,24 +22,31 @@ namespace TestTask
         /// Второй параметр - путь до второго файла.</param>
         static void Main(string[] args)
         {
-            if (args.Length < 2)
+            if (args.Length != 2)
             {
                 Console.WriteLine("Укажите два пути до файлов.");
                 return;
             }
 
-            using (IReadOnlyStream inputStream1 = GetInputStream(args[0]))
-            using (IReadOnlyStream inputStream2 = GetInputStream(args[1]))
-            {
-                IList<LetterStats> singleLetterStats = FillSingleLetterStats(inputStream1);
-                IList<LetterStats> doubleLetterStats = FillDoubleLetterStats(inputStream2);
+                using (IReadOnlyStream inputStream1 = GetInputStream(args[0]))
+                using (IReadOnlyStream inputStream2 = GetInputStream(args[1]))
+                {
+                    IList<LetterStats> singleLetterStats = FillSingleLetterStats(inputStream1);
+                    IList<LetterStats> doubleLetterStats = FillDoubleLetterStats(inputStream2);
 
-                RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
-                RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
+                    // Оставляем все буквы и выводим первоначальную статистику в консоль
+                    Console.WriteLine("Полная статистика");
+                    PrintStatistic(singleLetterStats);
+                    PrintStatistic(doubleLetterStats);
 
-                PrintStatistic(singleLetterStats);
-                PrintStatistic(doubleLetterStats);
-            }
+                    // Убираем гласные и согласные из статистики и выводим результат в консоль
+                    RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
+                    RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
+
+                    Console.WriteLine("Статистика без учёта гласных в первом файле и согласных во втором файле");
+                    PrintStatistic(singleLetterStats);
+                    PrintStatistic(doubleLetterStats);
+                }
 
             Console.WriteLine("Нажмите любую клавишу для выхода...");
             Console.ReadKey(true);
