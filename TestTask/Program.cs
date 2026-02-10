@@ -9,7 +9,7 @@ namespace TestTask
     {
         // Список гласных
         private static readonly HashSet<char> Vowels = new HashSet<char>(
-            "аеёиоуыэюяAEIOUYаеёиоуыэюя".ToUpperInvariant()
+            "аеёиоуыэюяAEIOUY".ToUpperInvariant()
         );
 
         /// <summary>
